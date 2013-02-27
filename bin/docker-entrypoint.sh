@@ -42,14 +42,14 @@ execute_hooks() {
     if [ ! -d "$hdir" ];then return 0;fi
     shift
     while read f;do
-        if ( echo "$f" | egrep -q "\.sh$" );then
+        if ( echo "$f" | grep -E -q "\.sh$" );then
             debuglog "running shell hook($step): $f"
             . "${f}"
         else
             debuglog "running executable hook($step): $f"
             "$f" "$@"
         fi
-    done < <(find "$hdir" -type f -executable 2>/dev/null | egrep -iv readme | sort -V; )
+    done < <(find "$hdir" -type f -executable 2>/dev/null | grep -E -iv readme | sort -V; )
 }
 # export back the gateway ip as a host if ip is available in container
 if ( ip -4 route list match 0/0 &>/dev/null );then
@@ -99,10 +99,10 @@ pipinstall() {
         end="&>/dev/null"
     fi
     eval "vv ${PYTHON} -m \
-        pip install $PIP_DEVELOP_ARGS -r <( egrep "^-e" $REQUIREMENTS ) $end"
+        pip install $PIP_DEVELOP_ARGS -r <( grep -E "^-e" $REQUIREMENTS ) $end"
 }
 if [[ -z $NO_PIP_INSTALL ]] && ( for i in $REQUIREMENTS;do \
-    if [ -e $i ] && ( egrep -q -- ^-e $i; );then exit 0;fi;done; \
+    if [ -e $i ] && ( grep -E -q -- ^-e $i; );then exit 0;fi;done; \
         exit 1; );then
     if [[ -n $VERBOSE_PIP_INSTALL ]];then
         log "Reinstalling $REQUIREMENTS editable dependencies"

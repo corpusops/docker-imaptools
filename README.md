@@ -11,7 +11,7 @@ printf "USER_UID=$(id -u)\nUSER_GID=$(id -g)\n">>.env
 
 ### Build
 ```bash
-eval $(egrep -hv '^#|^\s*$' .env|sed  -e "s/^/export /g"| sed -e "s/=/='/" -e "s/$/'/g"|xargs)
+eval $(grep -E -hv '^#|^\s*$' .env|sed  -e "s/^/export /g"| sed -e "s/=/='/" -e "s/$/'/g"|xargs)
 COMPOSE_FILE="docker-compose.yml:docker-compose-build.yml" docker-compose build
 ```
 
