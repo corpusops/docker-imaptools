@@ -1,0 +1,10 @@
+version: "3.8"
+x-images:
+  base: &base
+    build:
+      context: "."
+      args:
+        PY_VER: "3.8"
+        BUILDKIT_INLINE_CACHE: "${BUILDKIT_INLINE_CACHE:-1}"
+services:
+  app: { <<: [ *base ] }

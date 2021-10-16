@@ -1,0 +1,15 @@
+version: "3.8"
+services:
+  app:
+    environment:
+      NO_NVM_INSTALL: "${NO_NVM_INSTALL-}"
+      NO_PIP_INSTALL: "${NO_PIP_INSTALL-}"
+      FILES_EXTRA_DIRS: "${DATA_FOLDER:-./data} ./.tox"
+    volumes:
+    - "./apt.txt:/w/apt.txt"
+    - "${DATA_FOLDER:-./data}:/w/data"
+    - "./bin:/w/bin"
+    - "./.git:/w/.git"
+    - "./sys:/w/sys"
+    - "./local/imapfilter/configs:/w/imapfilter/configs"
+    - "./local/imapfilter/src:/w/imapfilter/src"

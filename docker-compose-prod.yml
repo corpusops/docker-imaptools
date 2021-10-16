@@ -1,0 +1,8 @@
+version: "3.8"
+services:
+  log:
+    restart: unless-stopped
+  app:
+    restart: unless-stopped
+  setup:
+    restart: unless-stopped

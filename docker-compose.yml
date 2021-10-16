@@ -1,0 +1,67 @@
+version: "3.8"
+x-bases:
+  x-base: &base
+    env_file: [.env]
+    environment:
+      BASE_IMAGE: "${BASE_IMAGE:-corpusops/ubuntu-bare:20.04}"
+      NGINX_REAL_IP_FROM: "10.0.0.0/8 172.38.0.0/12 192.168.0.0/16 ${IMAPTOOLS_NETWORK:-172.38.0.0/12}"
+networks: {app_net: {driver: bridge, ipam: {config: [{subnet: "${IMAPTOOLS_NETWORK:-172.38.0.0/24}"}], driver: default}}}
+services:
+  log:
+    depends_on: []
+    <<: [ *base ]
+    image: corpusops/rsyslog
+    ports: ["${LOGGING_EXT_IP:-127.0.0.1}:${LOGGING_EXT_PORT:-10514}:10514"]
+    # ensure no syslog log loop
+    logging: {driver: "json-file", options: {max-size: "10M", max-file: "50"}}
+    networks: {app_net: {ipv4_address: "${SYSLOG_IP_ADDRESS:-172.38.0.252}"}}
+    volumes: [logs:/var/log/docker]
+  app:
+    depends_on: [log, setup]
+    <<: [ *base ]
+    image: "${DOCKER_IMAGE:-corpusops/imaptools}"
+    logging: {driver: syslog, options: {tag: "app", syslog-address: "tcp://${LOGGING_EXT_IP:-127.0.0.1}:${LOGGING_EXT_PORT:-10514}"}}
+    environment:
+      START_COMMAND: "${START_COMMAND:-}"
+    volumes:
+    - "${DATA_FOLDER:-./data}:/w/data"
+    - helpers:/helpers:rw
+    env_file: [.env]
+    networks: {app_net: {ipv4_address: "${APP_IP_ADDRESS:-172.38.0.2}"}}
+    entrypoint:
+    - bash
+    - -ec
+    - |-
+      export PATH=/helpers:$$PATH
+      dockerize -wait http://setup -timeout 60s
+      while read f;do d=/$$(dirname $$f)/$$(basename sys/$$f .frep);echo "Generating $$f" >&2;frep "sys/$$f:$$d" --overwrite;done < <(cd sys && find -type f -name "*frep")
+      exec docker-entrypoint.sh "$$@"
+  setup:
+    depends_on: [log]
+    image: "${BASE_IMAGE:-corpusops/ubuntu-bare:20.04}"
+    logging: {driver: syslog, options: {tag: "setup", syslog-address: "tcp://${LOGGING_EXT_IP:-127.0.0.1}:${LOGGING_EXT_PORT:-10514}"}}
+    <<: [ *base ]
+    entrypoint:
+    - bash
+    - -ec
+    - |-
+      cp -arvf /cops_helpers/* /helpers
+      export PATH=/cops_helpers:/$$PATH
+      hf=/started_hr
+      HELPERS_TIMEOUT=$${HELPERS_TIMEOUT:-45s}
+      rf() { for fl in $$hf;do if [ -f $$fl ] ;then rm -f $$fl;fi;done; }
+      echo "Try helpers availability" >&2
+      ( set +ex;while true;do /helpers/frep --version && touch $$hf&&break;sleep 1;echo retryh;done; )&
+      rf
+      set -x
+      dockerize -timeout 900s -wait "file:///$$hf"
+      set +x
+      rf
+      while true;do printf "HTTP/1.1 200 OK\nContent-Length: 7\n\nstarted\n"|( nc -l -p 80 || /bin/true);done
+    networks: {app_net: {ipv4_address: "${SETUP_IP_ADDRESS:-172.38.0.6}"}}
+    volumes:
+    - helpers:/helpers:rw
+volumes:
+  helpers: {}
+  db:
+  logs:

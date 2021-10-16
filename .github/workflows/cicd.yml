@@ -1,0 +1,73 @@
+on:
+  workflow_dispatch:
+    inputs:
+      RUNTESTS: {description: 'Run tests', required: false}
+  push:
+  pull_request:
+  schedule: [{cron: '1 0 1,15 * *'}]
+env:
+  DOCKER_BUILDKIT: "1"
+  COMPOSE_DOCKER_CLI_BUILD: "1"
+  BUILDKIT_PROGRESS: "plain"
+  NO_SQUASH: ""
+  NONINTERACTIVE: "1"
+  FORCE_ONLINE: "1"
+  COMPOSE_FILE: "docker-compose.yml:docker-compose-build.yml"
+  MAIN_BRANCH: main
+  RELEASABLE_REPOS: "^corpusops/"
+  RELEASABLE_BRANCHES: "^refs/tags|^(refs/heads/)?(main)$"
+  IMG: "corpusops/imaptools"
+  RUNTESTS: ${{ github.event.inputs.RUNTESTS || '1' }}
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with: {submodules: recursive}
+    - name: Set vars
+      run: |-
+          if ( echo "$GITHUB_REF" | egrep -q "${RELEASABLE_BRANCHES}" ) \
+          && ( echo "$GITHUB_REPOSITORY" | egrep -q "${RELEASABLE_REPOS}" )
+          then releasable=true;else releasable=false;fi
+          echo "::set-output name=releasable::$releasable"
+      id: v
+    - name: Login to Docker Hub
+      uses: docker/login-action@v1
+      with:
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+    - name: Activate docker experimental
+      run: |-
+        sudo bash -exc "service docker stop;python -c \
+        \"d='/etc/docker/daemon.json';\
+        import json;c=json.load(open(d));c['experimental']=True;\
+        open(d, 'w').write(json.dumps(c))\"
+        systemctl restart docker"
+    - name: Setup env
+      run:  |-
+        set -e
+        for i in .env;do if [ -e $i.test ];then cp -v $i.test $i;fi;done
+        printf "USER_UID=$(id -u)\nUSER_GID=$(id -g)\n">>.env
+    - name: Build dependant docker images if any
+      run: |-
+        set -e
+        if ( docker-compose config|egrep -q build:; );then
+          docker-compose build
+        fi
+    - name: Start stack
+      if: ${{ env.RUNTESTS == '1' }}
+      run: docker-compose up -d && docker-compose ps -a
+    - name: Release docker image
+      run:  |-
+        set -ex
+        vv() { echo "$@">&2;"$@"; }
+        br_or_tag=${GITHUB_REF##*/}
+        if [ "x${{steps.v.outputs.releasable}}" = "xtrue" ];then
+          if ( echo "$GITHUB_REF" | egrep -q "$RELEASABLE_BRANCHES" );then
+            docker tag ${IMG}:latest ${IMG}:$br_or_tag
+            vv docker push ${IMG}:$br_or_tag
+          fi
+          if [ "x$br_or_tag" = "x$MAIN_BRANCH" ];then
+            vv docker push ${IMG}:latest
+          fi
+        fi
