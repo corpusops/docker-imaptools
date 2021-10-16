@@ -11,12 +11,13 @@ Considering your config is name ``myconfig.lua``
 ```sh
 docker-compose run --rm  app -- bash -ec "cd imapfilter;src/imapfilter -c configs/myconfig.lua"
 ```
-#### Run in CRON MODE with autorestart at boot
+#### Run in CRON MODE
 ```sh
 sed "/IMAGE_MODE/d" .env
 echo "IMAGE_MODE=cron">>.env
 docker-compose up -d --force-recreate
 ```
+
 ### Start at boot
 set prod set of config files
 

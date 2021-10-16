@@ -42,6 +42,14 @@ RUN bash -exc ': \
     && if ! ( getent passwd $USER_NAME 2>/dev/null );then useradd -s /bin/bash -d $USER_HOME -m -u $USER_UID -g $USER_UID $USER_NAME;fi \
     && echo "${USER_NAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers \
     '
+###
+# ADD HERE CUSTOM THINGS TO ADD TO BASEIMAGE WHICH ARE REQUIRED AT BUILDTIMe
+###
+RUN \
+    cd $APP_HOME \
+    && cpanm Mail::IMAPClient JSON::WebToken Encode::IMAPUTF7 File/Tail.pm \
+    && curl https://imapsync.lamiral.info/dist/imapsync -sSLo sbin/imapsync \
+    && chmod +x sbin/imapsync
 
 FROM base AS appsetup
 RUN bash -exc ': \
@@ -63,6 +71,8 @@ FROM appsetup AS final
 ###
 # ADD HERE CUSTOM BUILD PROJECT SETUP
 ###
+ADD local/imapfilter imapfilter/
+RUN cd imapfilter && make
 RUN bash -exc ': \
     && : "fixperms" \
     && while read f;do chown -Rf $USER_NAME $f;done < <( find $USER_HOME $APP_HOME -not -uid ${USER_UID} ) \
@@ -71,6 +81,7 @@ RUN bash -exc ': \
 FROM base AS runner
 RUN --mount=type=bind,from=final,target=/s bash -exc ': \
     && for i in /home/ $APP_HOME/ $USER_HOME/;do rsync -aAH --numeric-ids /s${i} ${i};done \
+    && ln -sfv ${APP_HOME}/imapfilter ${USER_HOME}/.imapfilter \
     '
 WORKDIR $USER_HOME
 # image will drop privileges itself using gosu at the end of the entrypoint

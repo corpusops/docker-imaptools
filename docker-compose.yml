@@ -26,6 +26,7 @@ services:
     volumes:
     - "${DATA_FOLDER:-./data}:/w/data"
     - helpers:/helpers:rw
+    - "./imapfilter:/w/imapfilter/configs"
     env_file: [.env]
     networks: {app_net: {ipv4_address: "${APP_IP_ADDRESS:-172.38.0.2}"}}
     entrypoint:

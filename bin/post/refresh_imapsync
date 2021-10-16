@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -e
+if [ -e imapfilter/src/imapfilter ];then exit 0;fi
+log "imapfilter/src is mounted as a volume and imapfilter binary is not built, rebuilding it"
+set -x
+apt update -qqy
+apt-get install -qq -y $(cat apt.txt|grep -vE "^\s*#"|tr "\n" " " )
+cd imapfilter && make && cd -
+set +x
+# vim:set et sts=4 ts=4 tw=80:

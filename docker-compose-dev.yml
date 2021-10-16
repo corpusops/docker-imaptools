@@ -11,5 +11,5 @@ services:
     - "./bin:/w/bin"
     - "./.git:/w/.git"
     - "./sys:/w/sys"
-    - "./local/imapfilter/configs:/w/imapfilter/configs"
     - "./local/imapfilter/src:/w/imapfilter/src"
+    - "./local/imapfilter/cron:/w/imapfilter/cron"

@@ -1,9 +1,6 @@
 # tools for working with imaptools
 
-## install as a python lib
-```bash
-pip install imaptools
-```
+This repo builds [corpusops/imaptools](https://hub.docker.com/r/corpusops/imaptools) docker image bundling imapsync & imapfilter.
 
 ## Run in dev
 ### Configure
@@ -29,13 +26,6 @@ sed "/COMPOSE_FILE/d" .env
 echo COMPOSE_FILE=docker-compose.yml:docker-compose-dev.yml:docker-compose-build.yml>>.env
 docker-compose up -d --force-recreate
 docker-compose exec -u app app bash
-```
-
-### run tests
-```bash
-sed "/COMPOSE_FILE/d" .env
-echo COMPOSE_FILE=docker-compose.yml:docker-compose-dev.yml:docker-compose-test.yml"
-docker-compose exec -U app app tox -e linting,coverage
 ```
 
 ## Doc

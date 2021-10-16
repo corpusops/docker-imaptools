@@ -1,0 +1,6 @@
+PATH=/helpers:/bin://w/node_modules/.bin:/w/bin:/w/sbin:/w/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+LOGS=/logs/
+MAILTO=""
+
+{{ (((.Env.crons_imapfilter | default "false" )| lower ) | eq  "true" ) | ternary "" "#" -}}
+*/5 * * * * {{.Env.USER_NAME}} {{.Env.USER_HOME}}/.imapfilter/cron/imapfilter_cron.sh

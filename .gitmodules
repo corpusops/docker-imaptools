@@ -1,0 +1,3 @@
+[submodule "local/imapfilter"]
+	path = local/imapfilter
+	url = https://github.com/corpusops/imapfilter.git

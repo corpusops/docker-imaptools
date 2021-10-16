@@ -1,5 +1,14 @@
 #!/usr/bin/env bash
 set -e
+export IMAGE_MODE=${IMAGE_MODE-}
+if [[ "$IMAGE_MODE" == "cron" ]];then
+    export SHELL_USER=root
+    export START_COMMAND=${START_COMMAND:-/helpers/supervisord.sh}
+    export SUPERVISORD_CONFIGS="cron rsyslog"
+    export RSYSLOG_OUT_LOGFILE="n"
+    export crons_imapfilter=true
+fi
+
 rm -f /.started
 PYTHON=${PYTHON-python}
 
