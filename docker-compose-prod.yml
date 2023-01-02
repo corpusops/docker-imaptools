@@ -1,8 +1,8 @@
 version: "3.8"
 services:
   log:
-    restart: unless-stopped
+    restart: always
   app:
-    restart: unless-stopped
+    restart: always
   setup:
-    restart: unless-stopped
+    restart: always

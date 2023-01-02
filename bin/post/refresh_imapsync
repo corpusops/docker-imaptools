@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -e
 if [ -e imapfilter/src/imapfilter ];then exit 0;fi
+log() { echo $@ >&2; }
 log "imapfilter/src is mounted as a volume and imapfilter binary is not built, rebuilding it"
 set -x
 apt update -qqy
